@@ -12,6 +12,7 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [selectedModel, setSelectedModel] = useState(models[0]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -19,6 +20,7 @@ export default function Home() {
       const newUserMessage = { text: inputMessage, sender: "user" };
       setMessages(prevMessages => [...prevMessages, newUserMessage]);
       setInputMessage("");
+      setIsLoading(true);
       
       try {
         const response = await fetch('/groqapi', {
@@ -34,9 +36,11 @@ export default function Home() {
         });
         const data = await response.json();
         setMessages(prevMessages => [...prevMessages, { text: data.botResponse, sender: "bot" }]);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error getting chat completion:", error);
         setMessages(prevMessages => [...prevMessages, { text: "Sorry, an error occurred.", sender: "bot" }]);
+        setIsLoading(false);
       }
     }
   };
@@ -65,6 +69,17 @@ export default function Home() {
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="text-left mt-4">
+            <div className="inline-block bg-gray-700 p-2 rounded-lg">
+              <div className="flex">
+                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></span>
+                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce ml-1" style={{animationDelay: "0.2s"}}></span>
+                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce ml-1" style={{animationDelay: "0.4s"}}></span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-700">
         <div className="flex mb-2">
