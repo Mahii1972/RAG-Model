@@ -23,7 +23,7 @@ export default function Home() {
       setIsLoading(true);
       
       try {
-        const response = await fetch('/groqapi', {
+        const response = await fetch('/api/groqapi', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

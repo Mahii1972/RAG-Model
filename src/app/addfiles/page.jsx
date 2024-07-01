@@ -1,9 +1,30 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AiOutlineCloudUpload, AiOutlineFile } from "react-icons/ai";
 
 export default function AddFiles() {
   const [files, setFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  useEffect(() => {
+    fetchUploadedFiles();
+  }, []);
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const response = await fetch('/api/fileslist');
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data.filenames);
+      } else {
+        console.error('Failed to fetch uploaded files');
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    }
+  };
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -26,10 +47,35 @@ export default function AddFiles() {
     setFiles(validFiles);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the files to your backend
-    console.log("Files to upload:", files);
+    setIsUploading(true);
+    setUploadStatus(null);
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('file', file);
+    });
+
+    try {
+      const response = await fetch('/api/pinecone', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setUploadStatus('Files uploaded successfully!');
+        setFiles([]);
+        fetchUploadedFiles(); // Refresh the list of uploaded files
+      } else {
+        setUploadStatus('Error uploading files. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      setUploadStatus('Error uploading files. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -72,11 +118,30 @@ export default function AddFiles() {
           )}
           <button
             type="submit"
-            className="w-full px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+            disabled={isUploading || files.length === 0}
           >
-            Upload Files
+            {isUploading ? 'Uploading...' : 'Upload Files'}
           </button>
+          {uploadStatus && (
+            <p className={`mt-4 text-center ${uploadStatus.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>
+              {uploadStatus}
+            </p>
+          )}
         </form>
+        {uploadedFiles.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold mb-2">Uploaded Files:</h2>
+            <ul>
+              {uploadedFiles.map((filename, index) => (
+                <li key={index} className="flex items-center mb-2">
+                  <AiOutlineFile className="mr-2" />
+                  {filename}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </main>
   );

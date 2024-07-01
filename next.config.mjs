@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ['@xenova/transformers'],
+  },
   images: {
     remotePatterns: [
       {
@@ -15,6 +18,17 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        child_process: false,
+        path: false,
+      };
+    }
+    return config;
   },
 };
 
